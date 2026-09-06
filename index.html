@@ -1,0 +1,615 @@
+<title>Arc Local Node</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #F1F3F6;
+    --surface: #FFFFFF;
+    --surface-2: #E9EDF2;
+    --ink: #131A23;
+    --ink-2: #55606E;
+    --ink-3: #7C8795;
+    --line: #D8DEE6;
+    --line-strong: #C2CAD5;
+    --accent: #1D53C8;
+    --accent-soft: #E3EBFB;
+    --live: #0C8F6C;
+    --live-soft: #DFF2EB;
+    --warn: #B4530C;
+    --warn-soft: #FBEBDC;
+    --code-bg: #10161F;
+    --code-ink: #DDE5EF;
+    --code-line: #223047;
+
+    --display: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+    --body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0D1219;
+      --surface: #141C25;
+      --surface-2: #1B242F;
+      --ink: #E6ECF3;
+      --ink-2: #9DAABA;
+      --ink-3: #77828F;
+      --line: #232E3A;
+      --line-strong: #33414F;
+      --accent: #74A6FF;
+      --accent-soft: #16263F;
+      --live: #3ECFA4;
+      --live-soft: #102C26;
+      --warn: #E0954E;
+      --warn-soft: #2C2115;
+      --code-bg: #0A0F16;
+      --code-ink: #D6DFEA;
+      --code-line: #1D2836;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0D1219;
+    --surface: #141C25;
+    --surface-2: #1B242F;
+    --ink: #E6ECF3;
+    --ink-2: #9DAABA;
+    --ink-3: #77828F;
+    --line: #232E3A;
+    --line-strong: #33414F;
+    --accent: #74A6FF;
+    --accent-soft: #16263F;
+    --live: #3ECFA4;
+    --live-soft: #102C26;
+    --warn: #E0954E;
+    --warn-soft: #2C2115;
+    --code-bg: #0A0F16;
+    --code-ink: #D6DFEA;
+    --code-line: #1D2836;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+  /* language switching */
+  :root[data-ui-lang="tr"] [data-l="en"] { display: none; }
+  :root[data-ui-lang="en"] [data-l="tr"] { display: none; }
+
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px 88px; }
+
+  /* ---------- header ---------- */
+  header.top {
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .top-inner {
+    max-width: 1140px; margin: 0 auto; padding: 26px 24px 22px;
+    display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; justify-content: space-between;
+  }
+  .brand h1 {
+    font-family: var(--display);
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  .brand p { margin: 0; color: var(--ink-2); max-width: 60ch; font-size: 15.5px; }
+  .langswitch { display: flex; gap: 0; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
+  .langswitch button {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; font-weight: 600;
+    padding: 8px 14px; border: 0; background: transparent; color: var(--ink-2); cursor: pointer;
+  }
+  .langswitch button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chip {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.04em;
+    padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--surface-2); color: var(--ink-2);
+  }
+  .chip.live { background: var(--live-soft); border-color: transparent; color: var(--live); font-weight: 600; }
+
+  /* ---------- layout ---------- */
+  .cols { display: grid; grid-template-columns: 216px minmax(0, 1fr); gap: 44px; margin-top: 40px; align-items: start; }
+  nav.rail { position: sticky; top: 24px; }
+  nav.rail .rail-label {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 12px;
+  }
+  nav.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; counter-reset: step; }
+  nav.rail a {
+    display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: baseline;
+    padding: 5px 8px; border-radius: 5px; text-decoration: none; color: var(--ink-2); font-size: 14px;
+  }
+  nav.rail a:hover { background: var(--surface-2); color: var(--ink); }
+  nav.rail a .n { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+
+  main { min-width: 0; display: flex; flex-direction: column; gap: 40px; }
+
+  section { scroll-margin-top: 20px; }
+  h2 {
+    font-family: var(--display); font-size: 23px; letter-spacing: -0.015em; line-height: 1.2;
+    margin: 0 0 14px; display: flex; gap: 12px; align-items: baseline; text-wrap: balance;
+  }
+  h2 .n {
+    font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--accent);
+    border: 1px solid var(--line-strong); border-radius: 4px; padding: 2px 6px; flex: none;
+  }
+  h3 { font-family: var(--display); font-size: 15.5px; margin: 26px 0 8px; letter-spacing: -0.005em; }
+  h3:first-of-type { margin-top: 18px; }
+  p { margin: 0 0 12px; max-width: 68ch; }
+  .lede { font-size: 17px; color: var(--ink-2); max-width: 66ch; }
+  ul { margin: 0 0 14px; padding-left: 20px; max-width: 68ch; }
+  li { margin-bottom: 5px; }
+  strong { font-weight: 600; }
+
+  /* ---------- code ---------- */
+  .code {
+    position: relative; background: var(--code-bg); border: 1px solid var(--code-line);
+    border-radius: 8px; margin: 10px 0 16px; overflow: hidden;
+  }
+  .code pre {
+    margin: 0; padding: 14px 92px 14px 16px; overflow-x: auto;
+    font-family: var(--mono); font-size: 13px; line-height: 1.6; color: var(--code-ink);
+  }
+  .code .tag {
+    position: absolute; top: 0; right: 0;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #6B7C93; padding: 6px 10px;
+  }
+  .code button.copy {
+    position: absolute; bottom: 8px; right: 8px;
+    font-family: var(--mono); font-size: 11px; padding: 4px 9px; cursor: pointer;
+    background: #1B2634; color: #A9BAD0; border: 1px solid #2C3A4C; border-radius: 5px;
+  }
+  .code button.copy:hover { color: #fff; border-color: #43556C; }
+  code {
+    font-family: var(--mono); font-size: 0.875em;
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+  }
+  .code code { background: none; border: 0; padding: 0; }
+
+  /* ---------- tables ---------- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin-bottom: 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-3); font-weight: 600; background: var(--surface-2);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.mono, td .mono { font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  td a { font-family: var(--mono); font-size: 13px; }
+
+  /* ---------- topology panel ---------- */
+  .stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 18px; }
+  .node { background: var(--surface); padding: 14px 16px; }
+  .node .count {
+    font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--accent);
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .node .name { font-family: var(--display); font-size: 14px; margin-top: 4px; }
+  .node .role { font-size: 13px; color: var(--ink-2); line-height: 1.45; margin-top: 2px; }
+
+  /* ---------- callouts ---------- */
+  .note {
+    border-left: 2px solid var(--accent); background: var(--accent-soft);
+    padding: 11px 14px; border-radius: 0 6px 6px 0; margin: 0 0 16px; font-size: 14.5px; max-width: 68ch;
+  }
+  .note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .note p:last-child { margin-bottom: 0; }
+
+  /* ---------- troubleshooting ---------- */
+  .fixes { display: flex; flex-direction: column; gap: 14px; }
+  .fix { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; }
+  .fix .err {
+    font-family: var(--mono); font-size: 12.5px; color: var(--warn);
+    background: var(--warn-soft); border-radius: 4px; padding: 5px 9px; display: inline-block; margin-bottom: 8px;
+    overflow-wrap: anywhere;
+  }
+  .fix p { font-size: 14.5px; }
+  .fix .code { margin-bottom: 0; }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 22px; color: var(--ink-2); font-size: 14px; }
+  footer ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 4px 24px; }
+  footer .sig { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-top: 18px; }
+
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; gap: 28px; }
+    nav.rail { position: static; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; background: var(--surface); }
+    nav.rail ol { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>Arc Local Node</h1>
+      <p data-l="tr">Kendi bilgisayarında tam bir Arc test ağı çalıştır: 5 validator, 1 full node, blok tarayıcı ve Grafana. Windows 11 + WSL2'de test edildi.</p>
+      <p data-l="en">Run a complete Arc test network on your own machine: 5 validators, 1 full node, a block explorer and Grafana. Tested on Windows 11 + WSL2.</p>
+    </div>
+    <div class="langswitch" role="group" aria-label="Language / Dil">
+      <button type="button" data-setlang="tr" aria-pressed="true">TÜRKÇE</button>
+      <button type="button" data-setlang="en" aria-pressed="false">ENGLISH</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="chips">
+    <span class="chip live">arc-node v0.8.0 &middot; Zero8</span>
+    <span class="chip">chain id 1337</span>
+    <span class="chip">gas: USDC</span>
+    <span class="chip">rpc :8545</span>
+    <span class="chip">grafana :3000</span>
+    <span class="chip">WSL2 / Ubuntu</span>
+  </div>
+
+  <div class="cols">
+    <nav class="rail">
+      <div class="rail-label" data-l="tr">Kurulum sırası</div>
+      <div class="rail-label" data-l="en">Install order</div>
+      <ol>
+        <li><a href="#s1"><span class="n">01</span><span data-l="tr">Gereksinimler</span><span data-l="en">Requirements</span></a></li>
+        <li><a href="#s2"><span class="n">02</span><span data-l="tr">WSL2 (Windows)</span><span data-l="en">WSL2 (Windows)</span></a></li>
+        <li><a href="#s3"><span class="n">03</span><span data-l="tr">Bağımlılıklar</span><span data-l="en">Dependencies</span></a></li>
+        <li><a href="#s4"><span class="n">04</span><span data-l="tr">Depoyu klonla</span><span data-l="en">Clone the repo</span></a></li>
+        <li><a href="#s5"><span class="n">05</span><span data-l="tr">Ağı başlat</span><span data-l="en">Start the network</span></a></li>
+        <li><a href="#s6"><span class="n">06</span><span data-l="tr">Adresler</span><span data-l="en">Endpoints</span></a></li>
+        <li><a href="#s7"><span class="n">07</span><span data-l="tr">Doğrula</span><span data-l="en">Verify</span></a></li>
+        <li><a href="#s8"><span class="n">08</span><span data-l="tr">MetaMask</span><span data-l="en">MetaMask</span></a></li>
+        <li><a href="#s9"><span class="n">09</span><span data-l="tr">Günlük komutlar</span><span data-l="en">Daily commands</span></a></li>
+        <li><a href="#s10"><span class="n">10</span><span data-l="tr">Sorun giderme</span><span data-l="en">Troubleshooting</span></a></li>
+      </ol>
+    </nav>
+
+    <main>
+      <section id="s0">
+        <p class="lede" data-l="tr">Bu rehber, <a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a> deposundaki <code>make testnet</code> akışını takip eder. Tek komutla ayağa kalkan yerel bir Arc ağı kurarsın — internet bağlantısı olmadan, gerçek konsensüs ile. macOS ve Linux'ta da aynı adımlar geçerli; sadece WSL bölümünü atla.</p>
+        <p class="lede" data-l="en">This guide follows the <code>make testnet</code> workflow from <a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a>. One command gives you a local Arc network with real consensus, no public testnet needed. The same steps work on macOS and Linux — just skip the WSL section.</p>
+
+        <h3 data-l="tr">Ne ayağa kalkıyor?</h3>
+        <h3 data-l="en">What comes up</h3>
+        <div class="stack">
+          <div class="node">
+            <div class="count">5</div>
+            <div class="name" data-l="tr">Validator</div>
+            <div class="name" data-l="en">Validators</div>
+            <div class="role" data-l="tr">Her biri EL + CL çifti. Malachite BFT ile blok üretir.</div>
+            <div class="role" data-l="en">Each an EL + CL pair, producing blocks via Malachite BFT.</div>
+          </div>
+          <div class="node">
+            <div class="count">1</div>
+            <div class="name" data-l="tr">Full node</div>
+            <div class="name" data-l="en">Full node</div>
+            <div class="role" data-l="tr">Blok üretmez, senkron olur. RPC: :9045</div>
+            <div class="role" data-l="en">Follows the chain without proposing. RPC on :9045</div>
+          </div>
+          <div class="node">
+            <div class="count">1</div>
+            <div class="name">Blockscout</div>
+            <div class="role" data-l="tr">Kendi lokalinde blok tarayıcı, :80</div>
+            <div class="role" data-l="en">Your own block explorer on :80</div>
+          </div>
+          <div class="node">
+            <div class="count">2</div>
+            <div class="name" data-l="tr">İzleme</div>
+            <div class="name" data-l="en">Observability</div>
+            <div class="role" data-l="tr">Prometheus :9090 + Grafana :3000 (hazır dashboard'larla)</div>
+            <div class="role" data-l="en">Prometheus :9090 + Grafana :3000 with the repo's dashboards</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="s1">
+        <h2><span class="n">01</span><span data-l="tr">Gereksinimler</span><span data-l="en">Requirements</span></h2>
+        <p data-l="tr"><strong>Donanım:</strong> 8+ CPU çekirdeği, 16 GB RAM ve <strong>en az 80 GB boş disk</strong>. Bu son madde şaka değil: Rust derleme klasörü (<code>target/</code>) tek başına ~35 GB, Docker imajları + build cache ~14 GB yer kaplıyor.</p>
+        <p data-l="en"><strong>Hardware:</strong> 8+ CPU cores, 16 GB RAM, and <strong>at least 80 GB free disk</strong>. That last one is not a formality: the Rust build directory (<code>target/</code>) alone reaches ~35 GB, with another ~14 GB in Docker images and build cache.</p>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-l="tr">Araç</th><th data-l="en">Tool</th>
+                <th data-l="tr">Sürüm</th><th data-l="en">Version</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Rust</td><td class="mono">1.93.0</td><td><a href="https://rustup.rs">rustup.rs</a></td></tr>
+              <tr><td>Docker Engine + Compose</td><td class="mono">v29+</td><td><a href="https://docs.docker.com/engine/install/ubuntu/">docs.docker.com</a></td></tr>
+              <tr><td>Node.js</td><td class="mono">22.x</td><td><a href="https://nodejs.org">nodejs.org</a></td></tr>
+              <tr><td>Foundry</td><td class="mono">v1.4.4</td><td><a href="https://getfoundry.sh">getfoundry.sh</a></td></tr>
+              <tr><td>Protobuf</td><td class="mono">3.21+</td><td><a href="https://github.com/protocolbuffers/protobuf">github.com/protocolbuffers</a></td></tr>
+              <tr><td>Buf</td><td class="mono">1.72+</td><td><a href="https://github.com/bufbuild/buf">github.com/bufbuild/buf</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note warn">
+          <p data-l="tr">Hardhat yalnızca <strong>çift</strong> Node.js sürümlerini destekler (20.x, 22.x). 23.x veya 25.x ile derleme kırılır. Foundry sürümü de depodaki <code>.foundry-version</code> dosyasına sabitlenmiştir — farklı sürüm <code>make</code> tarafından reddedilir.</p>
+          <p data-l="en">Hardhat only supports <strong>even</strong> Node.js versions (20.x, 22.x) — 23.x or 25.x will break the build. The Foundry version is pinned by <code>.foundry-version</code> in the repo, and <code>make</code> rejects anything else.</p>
+        </div>
+      </section>
+
+      <section id="s2">
+        <h2><span class="n">02</span><span data-l="tr">Windows'taysan: önce WSL2</span><span data-l="en">On Windows: install WSL2 first</span></h2>
+        <p data-l="tr">PowerShell'i <strong>yönetici olarak</strong> aç ve şunu çalıştır:</p>
+        <p data-l="en">Open PowerShell <strong>as Administrator</strong> and run:</p>
+        <div class="code"><span class="tag">powershell</span><pre><code>wsl --install -d Ubuntu</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Bilgisayarı yeniden başlat, Ubuntu'yu aç, kullanıcı adı ve şifre belirle. <strong>Bundan sonraki tüm komutlar Ubuntu terminalinin içinde</strong> çalışır — PowerShell'de değil. Ayrıntı: <a href="https://learn.microsoft.com/windows/wsl/install">Microsoft WSL kurulum belgeleri</a>.</p>
+        <p data-l="en">Reboot, open Ubuntu, and set a username and password. <strong>Every command from here on runs inside the Ubuntu terminal</strong>, not PowerShell. Details: <a href="https://learn.microsoft.com/windows/wsl/install">Microsoft's WSL install docs</a>.</p>
+        <div class="note">
+          <p data-l="tr">WSL'in sanal diski (<code>ext4.vhdx</code>) C: sürücünde durur, büyür ve kendi kendine küçülmez. C:'de bol yer bırak.</p>
+          <p data-l="en">WSL's virtual disk (<code>ext4.vhdx</code>) lives on your C: drive, grows, and never shrinks on its own. Leave it room.</p>
+        </div>
+      </section>
+
+      <section id="s3">
+        <h2><span class="n">03</span><span data-l="tr">Bağımlılıkları kur</span><span data-l="en">Install the dependencies</span></h2>
+        <p data-l="tr">Hepsi Ubuntu terminalinin içinde, sırayla.</p>
+        <p data-l="en">All of this runs inside the Ubuntu terminal, in order.</p>
+
+        <h3 data-l="tr">3.1 — Sistem paketleri</h3>
+        <h3 data-l="en">3.1 — System packages</h3>
+        <div class="code"><span class="tag">bash</span><pre><code>sudo apt-get update &amp;&amp; sudo apt-get install -y build-essential pkg-config libclang-dev zlib1g-dev libssl-dev git curl unzip protobuf-compiler</code></pre><button class="copy" type="button">copy</button></div>
+
+        <h3 data-l="tr">3.2 — Docker (WSL'in içine; Docker Desktop gerekmez)</h3>
+        <h3 data-l="en">3.2 — Docker (inside WSL; no Docker Desktop needed)</h3>
+        <div class="code"><span class="tag">bash</span><pre><code>curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Terminali kapat, yeniden aç, sonra servisi başlat:</p>
+        <p data-l="en">Close the terminal, reopen it, then start the service:</p>
+        <div class="code"><span class="tag">bash</span><pre><code>sudo service docker start &amp;&amp; docker ps</code></pre><button class="copy" type="button">copy</button></div>
+        <div class="note">
+          <p data-l="tr">WSL'de systemd varsayılan olarak kapalı — bu yüzden her yeniden başlatmadan sonra Docker'ı <code>sudo service docker start</code> ile elle başlatırsın.</p>
+          <p data-l="en">systemd is off by default in WSL, so you start Docker manually with <code>sudo service docker start</code> after each reboot.</p>
+        </div>
+
+        <h3 data-l="tr">3.3 — Rust</h3>
+        <h3 data-l="en">3.3 — Rust</h3>
+        <div class="code"><span class="tag">bash</span><pre><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env" &amp;&amp; rustc --version</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Depodaki <code>rust-toolchain.toml</code> doğru sürümü (1.93.0) otomatik seçer, elle uğraşman gerekmez.</p>
+        <p data-l="en">The repo's <code>rust-toolchain.toml</code> pins the right toolchain (1.93.0) for you — nothing to select by hand.</p>
+
+        <h3 data-l="tr">3.4 — Node.js 22</h3>
+        <h3 data-l="en">3.4 — Node.js 22</h3>
+        <div class="code"><span class="tag">bash</span><pre><code>curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - &amp;&amp; sudo apt-get install -y nodejs
+node --version</code></pre><button class="copy" type="button">copy</button></div>
+
+        <h3 data-l="tr">3.5 — Foundry (sürüm sabit!)</h3>
+        <h3 data-l="en">3.5 — Foundry (pinned version!)</h3>
+        <div class="code"><span class="tag">bash</span><pre><code>curl -L https://foundry.paradigm.xyz | bash
+source ~/.bashrc &amp;&amp; foundryup -i v1.4.4 &amp;&amp; forge --version</code></pre><button class="copy" type="button">copy</button></div>
+
+        <h3 data-l="tr">3.6 — Buf</h3>
+        <h3 data-l="en">3.6 — Buf</h3>
+        <div class="code"><span class="tag">bash</span><pre><code>sudo curl -sSL "https://github.com/bufbuild/buf/releases/latest/download/buf-$(uname -s)-$(uname -m)" -o /usr/local/bin/buf &amp;&amp; sudo chmod +x /usr/local/bin/buf</code></pre><button class="copy" type="button">copy</button></div>
+      </section>
+
+      <section id="s4">
+        <h2><span class="n">04</span><span data-l="tr">Depoyu klonla</span><span data-l="en">Clone the repo</span></h2>
+        <div class="code"><span class="tag">bash</span><pre><code>git clone https://github.com/circlefin/arc-node.git &amp;&amp; cd arc-node
+git submodule update --init --recursive &amp;&amp; npm install</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Submodule adımını atlama — kontratlar orada. Belirli bir sürümü çalıştırmak için (biz v0.8.0 "Zero8" kullanıyoruz):</p>
+        <p data-l="en">Don't skip the submodule step — the contracts live there. To run a specific release (we run v0.8.0 "Zero8"):</p>
+        <div class="code"><span class="tag">bash</span><pre><code>git checkout v0.8.0</code></pre><button class="copy" type="button">copy</button></div>
+      </section>
+
+      <section id="s5">
+        <h2><span class="n">05</span><span data-l="tr">Ağı başlat</span><span data-l="en">Start the network</span></h2>
+        <div class="code"><span class="tag">bash</span><pre><code>make testnet</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Bu tek komut sırayla: kontratları derler → genesis üretir → Docker imajlarını build eder → 5 validator + 1 full node + Blockscout + Prometheus + Grafana'yı ayağa kaldırır.</p>
+        <p data-l="en">That single command compiles the contracts, generates genesis, builds the Docker images, and brings up 5 validators, 1 full node, Blockscout, Prometheus and Grafana.</p>
+        <div class="note warn">
+          <p data-l="tr"><strong>İlk çalıştırma uzun sürer</strong> — Rust derlemesi yüzünden makineye göre yaklaşık 30–60 dakika. Kahve molası. Sonraki başlatmalar birkaç dakika sürer.</p>
+          <p data-l="en"><strong>The first run takes a while</strong> — roughly 30–60 minutes depending on your machine, almost all of it the Rust build. Later starts take a few minutes.</p>
+        </div>
+        <p data-l="tr">Başarılı olduğunda terminalde şunu görürsün:</p>
+        <p data-l="en">When it works, the terminal ends with:</p>
+        <div class="code"><span class="tag">output</span><pre><code>✅ Nodes have reached height 1 nodes=validator1, validator2, validator3, validator4, validator5, full1
+✅ Testnet started</code></pre><button class="copy" type="button">copy</button></div>
+      </section>
+
+      <section id="s6">
+        <h2><span class="n">06</span><span data-l="tr">Adresler</span><span data-l="en">Endpoints</span></h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-l="tr">Servis</th><th data-l="en">Service</th>
+                <th data-l="tr">Adres</th><th data-l="en">URL</th>
+                <th data-l="tr">Not</th><th data-l="en">Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>RPC</strong> (validator1)</td><td><a href="http://localhost:8545">http://localhost:8545</a></td><td><span data-l="tr">Ana JSON-RPC</span><span data-l="en">Main JSON-RPC</span></td></tr>
+              <tr><td>WebSocket</td><td class="mono">ws://localhost:8546</td><td><span data-l="tr">Abonelikler</span><span data-l="en">Subscriptions</span></td></tr>
+              <tr><td>RPC (full node)</td><td><a href="http://localhost:9045">http://localhost:9045</a></td><td><span data-l="tr">Blok üretmeyen düğüm</span><span data-l="en">Non-proposing node</span></td></tr>
+              <tr><td><strong>Blockscout</strong></td><td><a href="http://localhost">http://localhost</a></td><td><span data-l="tr">Blok tarayıcı (:80)</span><span data-l="en">Block explorer (:80)</span></td></tr>
+              <tr><td><strong>Grafana</strong></td><td><a href="http://localhost:3000">http://localhost:3000</a></td><td><span data-l="tr">Şifre yok, direkt açılır</span><span data-l="en">No login required</span></td></tr>
+              <tr><td>Prometheus</td><td><a href="http://localhost:9090">http://localhost:9090</a></td><td><span data-l="tr">Ham metrikler</span><span data-l="en">Raw metrics</span></td></tr>
+              <tr><td>cAdvisor</td><td><a href="http://localhost:8080">http://localhost:8080</a></td><td><span data-l="tr">Container kaynak kullanımı</span><span data-l="en">Container resource usage</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="s7">
+        <h2><span class="n">07</span><span data-l="tr">Çalıştığını doğrula</span><span data-l="en">Verify it's alive</span></h2>
+        <div class="code"><span class="tag">bash</span><pre><code>cast block-number --rpc-url http://localhost:8545
+cast chain-id --rpc-url http://localhost:8545</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Blok numarası her sorguda artıyor ve chain id <code>1337</code> dönüyorsa ağ üretimde demektir. <code>cast</code> yoksa aynı şeyi curl ile yapabilirsin:</p>
+        <p data-l="en">If the block number climbs between calls and the chain id comes back <code>1337</code>, your network is producing blocks. Without <code>cast</code>, curl does the same job:</p>
+        <div class="code"><span class="tag">bash</span><pre><code>curl -s -X POST -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' http://localhost:8545</code></pre><button class="copy" type="button">copy</button></div>
+      </section>
+
+      <section id="s8">
+        <h2><span class="n">08</span><span data-l="tr">MetaMask'e ekle</span><span data-l="en">Add it to MetaMask</span></h2>
+        <div class="tablewrap">
+          <table>
+            <tbody>
+              <tr><td><span data-l="tr">Ağ adı</span><span data-l="en">Network name</span></td><td class="mono">Arc (Dev)</td></tr>
+              <tr><td>RPC URL</td><td class="mono">http://localhost:8545</td></tr>
+              <tr><td>Chain ID</td><td class="mono">1337</td></tr>
+              <tr><td><span data-l="tr">Sembol</span><span data-l="en">Currency symbol</span></td><td class="mono">USDC</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p data-l="tr">Bakiyeli test hesapları standart Hardhat/Anvil mnemonic'inden türetilir: <code>test test test test test test test test test test test junk</code></p>
+        <p data-l="en">The funded dev accounts come from the standard Hardhat/Anvil mnemonic: <code>test test test test test test test test test test test junk</code></p>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th data-l="tr">Adres</th><th data-l="en">Address</th><th data-l="tr">Private key</th><th data-l="en">Private key</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266</td><td class="mono">0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80</td></tr>
+              <tr><td class="mono">0x70997970C51812dc3A010C7d01b50e0d17dc79C8</td><td class="mono">0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note warn">
+          <p data-l="tr">Bu anahtarlar herkesçe bilinir — <strong>asla</strong> mainnet'te veya gerçek parayla kullanma. Tam liste depodaki <code>ACCOUNTS.md</code> dosyasında.</p>
+          <p data-l="en">These keys are public knowledge — <strong>never</strong> use them on mainnet or with real funds. The full list is in <code>ACCOUNTS.md</code>.</p>
+        </div>
+      </section>
+
+      <section id="s9">
+        <h2><span class="n">09</span><span data-l="tr">Günlük komutlar</span><span data-l="en">Daily commands</span></h2>
+        <div class="code"><span class="tag">bash</span><pre><code>make testnet         # <span data-l="tr">başlat</span><span data-l="en">start</span>
+make testnet-down    # <span data-l="tr">durdur</span><span data-l="en">stop</span>
+make testnet-clean   # <span data-l="tr">her şeyi sil, temiz başlangıç</span><span data-l="en">wipe everything for a clean start</span></code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Yük testi — 60 saniye boyunca saniyede 1000 işlem gönderir:</p>
+        <p data-l="en">Load test — pushes 1000 transactions per second for 60 seconds:</p>
+        <div class="code"><span class="tag">bash</span><pre><code>make testnet-load RATE=1000 TIME=60</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Logları izle:</p>
+        <p data-l="en">Follow the logs:</p>
+        <div class="code"><span class="tag">bash</span><pre><code>docker logs -f validator1_el
+docker logs -f validator1_cl</code></pre><button class="copy" type="button">copy</button></div>
+      </section>
+
+      <section id="s10">
+        <h2><span class="n">10</span><span data-l="tr">Sorun giderme</span><span data-l="en">Troubleshooting</span></h2>
+        <p data-l="tr">Aşağıdakilerin hepsi bizim başımıza geldi — özellikle v0.7.3'ten v0.8.0'a yükseltirken.</p>
+        <p data-l="en">Every one of these actually happened to us, mostly while upgrading from v0.7.3 to v0.8.0.</p>
+        <div class="fixes">
+          <div class="fix">
+            <div class="err">unexpected argument '--arc.denylist.enabled'</div>
+            <p data-l="tr">Eski <code>.quake</code> cache'i, kaldırılmış CLI flag'lerini yeni sürüme taşıyor. Cache'i tamamen sil:</p>
+            <p data-l="en">A stale <code>.quake</code> cache is carrying removed CLI flags into the new version. Wipe it completely:</p>
+            <div class="code"><span class="tag">bash</span><pre><code>rm -rf .quake/ &amp;&amp; make testnet</code></pre><button class="copy" type="button">copy</button></div>
+          </div>
+          <div class="fix">
+            <div class="err">EL has blocks but CL has no committed state</div>
+            <p data-l="tr">Execution layer'da eski zincir verisi var, consensus ise sıfırdan genesis bekliyor. İkisi <strong>birlikte</strong> sıfırlanmalı:</p>
+            <p data-l="en">The execution layer still has old chain data while consensus expects a fresh genesis. The two must be reset <strong>together</strong>:</p>
+            <div class="code"><span class="tag">bash</span><pre><code>make testnet-clean &amp;&amp; make testnet</code></pre><button class="copy" type="button">copy</button></div>
+          </div>
+          <div class="fix">
+            <div class="err">Pool overlaps with other one on this address space</div>
+            <p data-l="tr">Çok sayıda up/down döngüsünden sonra Docker'ın ağ veritabanı bozulmuş olabilir:</p>
+            <p data-l="en">After many up/down cycles, Docker's internal network database can get corrupted:</p>
+            <div class="code"><span class="tag">bash</span><pre><code>sudo service docker stop
+sudo rm -rf /var/lib/docker/network/files/local-kv.db
+sudo service docker start</code></pre><button class="copy" type="button">copy</button></div>
+            <p data-l="tr">Ayrıca Docker'a daha geniş subnet havuzu ver — <code>/etc/docker/daemon.json</code>:</p>
+            <p data-l="en">Also give Docker a wider subnet pool in <code>/etc/docker/daemon.json</code>:</p>
+            <div class="code"><span class="tag">json</span><pre><code>{
+  "default-address-pools": [
+    {"base": "172.80.0.0/16", "size": 24},
+    {"base": "172.90.0.0/16", "size": 24}
+  ]
+}</code></pre><button class="copy" type="button">copy</button></div>
+          </div>
+          <div class="fix">
+            <div class="err">Read-only file system &middot; <span data-l="tr">disk doldu (Windows + WSL)</span><span data-l="en">disk full (Windows + WSL)</span></div>
+            <p data-l="tr">WSL'in <code>ext4.vhdx</code> dosyası büyümüş ama içerideki alan boşalınca Windows'a geri dönmüyor. Önce içeriyi temizle:</p>
+            <p data-l="en">WSL's <code>ext4.vhdx</code> grew, and freeing space inside it doesn't return that space to Windows. Clean up inside first:</p>
+            <div class="code"><span class="tag">bash</span><pre><code>cargo clean
+docker system prune -a --volumes -f</code></pre><button class="copy" type="button">copy</button></div>
+            <p data-l="tr">Sonra Windows'ta (yönetici PowerShell) diski gerçekten küçült:</p>
+            <p data-l="en">Then actually shrink the disk from Windows (Admin PowerShell):</p>
+            <div class="code"><span class="tag">powershell</span><pre><code>wsl --shutdown
+diskpart
+# select vdisk file="C:\Users\&lt;user&gt;\AppData\Local\Packages\...\ext4.vhdx"
+# compact vdisk</code></pre><button class="copy" type="button">copy</button></div>
+          </div>
+          <div class="fix">
+            <div class="err">getpwuid failed &middot; WSL <span data-l="tr">çöktü</span><span data-l="en">crashed</span></div>
+            <p data-l="tr">Genelde disk sıkışmasının belirtisidir. Yönetici PowerShell'de <code>wsl --shutdown</code> çalıştır, Ubuntu'yu yeniden aç, sonra disk alanını kontrol et.</p>
+            <p data-l="en">Usually a symptom of the disk problem above. Run <code>wsl --shutdown</code> in Admin PowerShell, reopen Ubuntu, then check your free space.</p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <h3 data-l="tr">Faydalı linkler</h3>
+        <h3 data-l="en">Useful links</h3>
+        <ul>
+          <li><a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a> — <span data-l="tr">node deposu</span><span data-l="en">the node repo</span></li>
+          <li><a href="https://docs.arc.io">docs.arc.io</a> — <span data-l="tr">geliştirici dokümanları</span><span data-l="en">developer docs</span></li>
+          <li><a href="https://www.arc.io">arc.io</a> — <span data-l="tr">Arc web sitesi</span><span data-l="en">Arc website</span></li>
+          <li><a href="https://github.com/circlefin/malachite">Malachite</a> — <span data-l="tr">BFT konsensüs motoru</span><span data-l="en">the BFT consensus engine</span></li>
+          <li><a href="https://github.com/paradigmxyz/reth">Reth</a> — <span data-l="tr">execution layer temeli</span><span data-l="en">the execution layer base</span></li>
+          <li><span data-l="tr">Depo içi:</span><span data-l="en">In-repo:</span> <code>docs/installation.md</code>, <code>docs/monitoring.md</code>, <code>docs/ARCHITECTURE.md</code></li>
+        </ul>
+        <p class="sig" data-l="tr">Çalışan bir kurulumdan yazıldı: Arc v0.8.0 (Zero8), Windows 11 + WSL2 (Ubuntu) — Eylül 2026.</p>
+        <p class="sig" data-l="en">Written from a working setup: Arc v0.8.0 (Zero8) on Windows 11 + WSL2 (Ubuntu) — September 2026.</p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll('[data-setlang]');
+    var stored = null;
+    try { stored = localStorage.getItem('arc-guide-lang'); } catch (e) {}
+    setLang(stored === 'en' ? 'en' : 'tr');
+
+    function setLang(lang) {
+      root.setAttribute('data-ui-lang', lang);
+      root.setAttribute('lang', lang);
+      buttons.forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-setlang') === lang));
+      });
+      try { localStorage.setItem('arc-guide-lang', lang); } catch (e) {}
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () { setLang(b.getAttribute('data-setlang')); });
+    });
+
+    document.querySelectorAll('.code button.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var block = btn.parentNode.querySelector('code');
+        var text = block ? block.innerText : '';
+        var done = function () {
+          var label = root.getAttribute('data-ui-lang') === 'en' ? 'copied' : 'kopyalandı';
+          btn.textContent = label;
+          setTimeout(function () { btn.textContent = 'copy'; }, 1600);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, fallback);
+        } else { fallback(); }
+        function fallback() {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); done(); } catch (e) {}
+          document.body.removeChild(ta);
+        }
+      });
+    });
+  })();
+</script>
