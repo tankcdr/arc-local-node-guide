@@ -2,7 +2,7 @@
 
 This guide uses the same `make testnet` workflow as the [main guide](../README.md), with macOS dependencies and Docker Desktop. Run the commands in Terminal using macOS's default shell, zsh.
 
-The instructions target Apple Silicon. Intel users can follow the same source-build workflow with the Intel Homebrew and Docker Desktop installers, but that path has not been validated here. These instructions were checked against the [Arc v0.8.0 source](https://github.com/circlefin/arc-node/tree/v0.8.0); a complete macOS testnet build and startup has **not** been verified for this contribution.
+The instructions target Apple Silicon. The complete build and network startup were tested on macOS 26.5.1 with Docker Desktop 4.87.0 against the unmodified [Arc v0.8.0 source](https://github.com/circlefin/arc-node/tree/v0.8.0). Block heights advanced on all six nodes, and a transaction submitted through a validator was confirmed through the full node. See the [validation report](macos-validation.md) for versions, results, and limitations, including monitoring failures. Intel and the complete stop/restart/reset cycle have not been tested.
 
 ## 1. Prepare your Mac
 
@@ -130,6 +130,35 @@ Expect `v0.8.0`, Rust `1.93.0`, and Foundry `1.4.4`. Running Rust tools here let
 
 ## 6. Start and verify the network
 
+Before starting the stack, reserve Arc's two fixed subnets. Otherwise Docker can allocate one of these ranges to Arc's monitoring or host-access network first, causing startup to fail with an overlapping-pool error. These commands create only missing networks:
+
+```bash
+docker network inspect arc_testnet_blockscout >/dev/null 2>&1 || \
+docker network create --driver bridge --subnet 172.20.0.0/16 \
+  --label com.docker.compose.project=arc_testnet \
+  --label com.docker.compose.network=blockscout arc_testnet_blockscout
+docker network inspect arc_testnet_default >/dev/null 2>&1 || \
+docker network create --driver bridge --internal --subnet 172.21.0.0/16 \
+  --label com.docker.compose.project=arc_testnet \
+  --label com.docker.compose.network=default arc_testnet_default
+```
+
+The names and labels match Arc v0.8.0's Compose configuration; `--internal` preserves its node-network isolation. Stop if either creation command fails. Verify the settings even when the networks already existed:
+
+```bash
+docker network inspect --format '{{.Name}} {{.Internal}} {{range .IPAM.Config}}{{.Subnet}}{{end}} {{index .Labels "com.docker.compose.project"}} {{index .Labels "com.docker.compose.network"}}' \
+  arc_testnet_blockscout arc_testnet_default
+```
+
+Expected output:
+
+```text
+arc_testnet_blockscout false 172.20.0.0/16 arc_testnet blockscout
+arc_testnet_default true 172.21.0.0/16 arc_testnet default
+```
+
+If any value differs or a subnet is occupied, use the [troubleshooting steps](#troubleshooting) before proceeding. Repeat the reservation and verification commands before a restart: stopping monitoring or cleaning the testnet can remove the networks.
+
 ```bash
 make testnet
 ```
@@ -158,9 +187,20 @@ curl -sS -H 'Content-Type: application/json' \
 
 The chain ID response should contain `"result":"0x539"`. Repeat the block-number request after a few seconds to confirm it increases.
 
+Check WebSocket RPC and run Arc's connectivity and sync tests across all six nodes:
+
+```bash
+cast block-number --rpc-url ws://localhost:8546
+make testnet-test SPEC=probe
+```
+
+Expect two passing tests: `probe:connectivity` and `probe:sync`.
+
 The [shared endpoints](../README.md#6-endpoints), [MetaMask configuration](../README.md#8-add-it-to-metamask), and public development accounts also apply to macOS. Open Blockscout at <http://localhost> and Grafana at <http://localhost:3000>.
 
 ## 7. Stop, restart, or reset
+
+These commands were checked against the v0.8.0 implementation. A complete shutdown/restart/reset cycle was not exercised in the validation run; the network was left running for observation.
 
 Stop the Arc nodes (monitoring and Blockscout remain running):
 
@@ -174,20 +214,21 @@ To stop monitoring and Blockscout as well:
 cargo run --bin quake -- -f crates/quake/scenarios/localdev.toml monitoring stop
 ```
 
-Start it again from the same checkout:
+To start it again from the same unchanged checkout, repeat the network reservation commands in section 6, then reuse the existing Docker images:
 
 ```bash
-make testnet
+cargo run --bin quake -- -f crates/quake/scenarios/localdev.toml start
 ```
 
-To discard the local testnet's data and generated artifacts and start fresh:
+Use `make testnet` when you need to rebuild the images as well. That target invokes Docker builds on every run, even when you only want to restart the network.
+
+To discard the local testnet's data and generated artifacts:
 
 ```bash
 make testnet-clean
-make testnet
 ```
 
-`testnet-clean` deletes local chain state. Use it only when you intend to reset this development network.
+`testnet-clean` deletes local chain state and can remove the reserved Docker networks. Use it only when you intend to reset this development network. It retains built images and cached build artifacts. To start fresh afterward, repeat the network reservation commands in section 6, then use the Quake `start` command above. Use `make testnet` if you also need to rebuild.
 
 ## Troubleshooting
 
@@ -207,13 +248,38 @@ Run `command -v node` and `command -v forge`. Reapply the PATH exports above; th
 
 Check Docker Desktop's resource limits as well as `df -h .` and `docker system df`. Docker's VM can fill up while the Mac still has free space. Increase the relevant limit or remove only data you no longer need; a global Docker prune also affects other projects.
 
+**`make testnet` recompiles dependencies on subsequent runs**
+
+Docker can garbage-collect build caches independently of its VM disk limit. Check `builder.gc.defaultKeepStorage` in Docker Desktop's **Settings → Docker Engine**; a small cache budget can discard this project's large Rust build caches. For frequent rebuilds, choose a larger budget your disk can accommodate, following [Docker's cache-retention documentation](https://docs.docker.com/build/cache/garbage-collection/#docker-daemon-configuration-file). For an unchanged checkout, use the Quake restart command in section 7 to reuse the images already built.
+
 **`Mounts denied`**
 
 Allow the checkout directory in Docker Desktop's **Settings → Resources → File sharing**, or move the checkout into a shared directory under your home folder. Restart the command after applying the setting.
 
+**Grafana shows chain metrics, but per-container CPU/memory panels are empty**
+
+On the tested Docker Desktop 4.87.0 / Engine 29.7.2 setup, Arc's stock cAdvisor container served only aggregate VM metrics. Its Docker factory failed to register because `/run/containerd/containerd.sock` was unavailable. Prometheus still reported the cAdvisor target as `up`: that confirms a successful scrape, not that individual containers were discovered. Check `docker logs cadvisor` and <http://localhost:8080/metrics> before relying on those panels. Grafana dashboards and Arc metrics were available, but per-container resource monitoring remains an unresolved limitation of this tested configuration.
+
+**Prometheus execution targets report `context deadline exceeded`**
+
+All 13 targets were initially healthy during validation, but later five execution-layer targets timed out while block heights continued advancing on all six nodes. Arc's generated Prometheus configuration uses one-second scrape intervals for execution and consensus metrics; the observed failed scrapes reached a one-second timeout. Inspect <http://localhost:9090/targets> and check RPC block progression separately. The validation report records these timeouts; sustained monitoring reliability and a configuration adjustment have not been validated.
+
 **`Ports are not available` / `address already in use`**
 
 Use `docker ps --format 'table {{.Names}}\t{{.Ports}}'` to find other published container ports. For a host process, run `lsof -nP -iTCP:8545 -sTCP:LISTEN`, replacing `8545` with the port named in the error. Common conflicts include 80, 3000, 8080, 8545, and 9090. Stop or reconfigure the conflicting service before starting Arc.
+
+**`Pool overlaps with other one on this address space`**
+
+Arc v0.8.0's default local network uses `172.20.0.0/16` for Blockscout and `172.21.0.0/16` for its nodes. Existing Docker networks can occupy those ranges even after their containers have stopped. Inspect the networks before changing anything:
+
+```bash
+docker network ls
+docker network inspect NETWORK_NAME
+```
+
+Replace `NETWORK_NAME` with a name from the list. Check its `IPAM.Config` subnet, `Containers`, and project labels. If an unused network overlaps Arc's ranges, coordinate with the owning project, save its configuration, and remove only that network with `docker network rm NETWORK_NAME`. Recreate it through its owning project after cleaning up Arc. Do not delete Docker Desktop's internal network database or prune every project's networks to resolve this conflict.
+
+If the conflicting networks are Arc's own `arc_testnet_monitoring_default` or `arc_testnet_host-access`, they may have claimed a required range during an earlier startup attempt. To reset that development stack, run `make testnet-clean`, then reserve both networks as shown in section 6 before retrying `make testnet`. This reset deletes any existing local Arc chain data.
 
 **`no matching manifest for linux/arm64` from a third-party image**
 
