@@ -2,7 +2,9 @@
 
 > This guide gets a **complete local Arc network** running on your machine using the `make testnet`
 > workflow from [circlefin/arc-node](https://github.com/circlefin/arc-node).
-> Tested on Windows 11 + WSL2 (Ubuntu). The same steps work on macOS / Linux — just skip the WSL part.
+> Tested on Windows 11 + WSL2 (Ubuntu). The dependency instructions below target Ubuntu.
+
+**On macOS:** follow the [macOS setup guide](docs/macos.md) for Mac-specific dependencies and Docker configuration.
 
 🇹🇷 Türkçe sürüm: [README.tr.md](README.tr.md)
 
@@ -62,6 +64,8 @@ WSL docs: https://learn.microsoft.com/windows/wsl/install
 ---
 
 ## 3. Install dependencies (inside Ubuntu)
+
+> **macOS users:** use the [macOS setup guide](docs/macos.md) instead of the Ubuntu commands in this section.
 
 ### 3.1 System packages
 
@@ -127,18 +131,14 @@ sudo curl -sSL "https://github.com/bufbuild/buf/releases/latest/download/buf-$(u
 
 ## 4. Clone the repo
 
+Select v0.8.0 "Zero8" before initializing its submodules and installing dependencies:
+
 ```bash
-git clone https://github.com/circlefin/arc-node.git && cd arc-node
+git clone --branch v0.8.0 https://github.com/circlefin/arc-node.git && cd arc-node
 ```
 
 ```bash
 git submodule update --init --recursive && npm install
-```
-
-To run a specific release (we run v0.8.0 "Zero8"):
-
-```bash
-git checkout v0.8.0
 ```
 
 ---
@@ -259,7 +259,7 @@ make testnet-clean && make testnet
 ```
 
 **`Pool overlaps with other one on this address space`**
-Docker's internal network state is corrupted:
+**Linux/WSL Docker Engine only:** Docker's internal network state may be corrupted. On macOS, use the [macOS troubleshooting section](docs/macos.md#troubleshooting) instead of the service commands and Linux paths below.
 
 ```bash
 sudo service docker stop && sudo rm -rf /var/lib/docker/network/files/local-kv.db && sudo service docker start

@@ -2,7 +2,9 @@
 
 > Bu rehber, [circlefin/arc-node](https://github.com/circlefin/arc-node) deposundaki `make testnet` akışıyla
 > kendi bilgisayarında **tam bir Arc test ağı** çalıştırmanı sağlar.
-> Windows 11 + WSL2 (Ubuntu) üzerinde test edildi. macOS / Linux'ta da aynı adımlar geçerli (WSL kısmını atla).
+> Windows 11 + WSL2 (Ubuntu) üzerinde test edildi. Aşağıdaki bağımlılık kurulum adımları Ubuntu içindir.
+
+**macOS kullanıyorsan:** Mac'e özel bağımlılıklar ve Docker yapılandırması için [macOS kurulum rehberini (İngilizce)](docs/macos.md) takip et.
 
 🇬🇧 English version: [README.md](README.md)
 
@@ -62,6 +64,8 @@ WSL belgeleri: https://learn.microsoft.com/windows/wsl/install
 ---
 
 ## 3. Bağımlılıkları kur (Ubuntu içinde)
+
+> **macOS kullanıcıları:** bu bölümdeki Ubuntu komutları yerine [macOS kurulum rehberini (İngilizce)](docs/macos.md) kullanmalı.
 
 ### 3.1 Sistem paketleri
 
@@ -127,18 +131,14 @@ sudo curl -sSL "https://github.com/bufbuild/buf/releases/latest/download/buf-$(u
 
 ## 4. Depoyu klonla
 
+Submodule'leri başlatmadan ve bağımlılıkları kurmadan önce v0.8.0 "Zero8" sürümünü seç:
+
 ```bash
-git clone https://github.com/circlefin/arc-node.git && cd arc-node
+git clone --branch v0.8.0 https://github.com/circlefin/arc-node.git && cd arc-node
 ```
 
 ```bash
 git submodule update --init --recursive && npm install
-```
-
-Belirli bir sürümü çalıştırmak istersen (biz v0.8.0 "Zero8" kullanıyoruz):
-
-```bash
-git checkout v0.8.0
 ```
 
 ---
@@ -259,7 +259,7 @@ make testnet-clean && make testnet
 ```
 
 **`Pool overlaps with other one on this address space`**
-Docker'ın ağ veritabanı bozulmuş:
+**Yalnızca Linux/WSL Docker Engine için:** Docker'ın ağ veritabanı bozulmuş olabilir. macOS'ta aşağıdaki servis komutları ve Linux dosya yolları yerine [macOS sorun giderme bölümünü (İngilizce)](docs/macos.md#troubleshooting) kullan.
 
 ```bash
 sudo service docker stop && sudo rm -rf /var/lib/docker/network/files/local-kv.db && sudo service docker start

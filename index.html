@@ -273,8 +273,12 @@
 
     <main>
       <section id="s0">
-        <p class="lede" data-l="tr">Bu rehber, <a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a> deposundaki <code>make testnet</code> akışını takip eder. Tek komutla ayağa kalkan yerel bir Arc ağı kurarsın — internet bağlantısı olmadan, gerçek konsensüs ile. macOS ve Linux'ta da aynı adımlar geçerli; sadece WSL bölümünü atla.</p>
-        <p class="lede" data-l="en">This guide follows the <code>make testnet</code> workflow from <a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a>. One command gives you a local Arc network with real consensus, no public testnet needed. The same steps work on macOS and Linux — just skip the WSL section.</p>
+        <p class="lede" data-l="tr">Bu rehber, <a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a> deposundaki <code>make testnet</code> akışını takip eder. Tek komutla gerçek konsensüs kullanan yerel bir Arc ağı kurarsın; herkese açık bir test ağına gerek yok. Aşağıdaki bağımlılık kurulum adımları Ubuntu içindir.</p>
+        <p class="lede" data-l="en">This guide follows the <code>make testnet</code> workflow from <a href="https://github.com/circlefin/arc-node">circlefin/arc-node</a>. One command gives you a local Arc network with real consensus, no public testnet needed. The dependency instructions below target Ubuntu.</p>
+        <div class="note">
+          <p data-l="tr"><strong>macOS kullanıyorsan:</strong> Mac'e özel bağımlılıklar ve Docker yapılandırması için <a href="docs/macos.md">macOS kurulum rehberini (İngilizce)</a> takip et.</p>
+          <p data-l="en"><strong>On macOS:</strong> follow the <a href="docs/macos.md">macOS setup guide</a> for Mac-specific dependencies and Docker configuration.</p>
+        </div>
 
         <h3 data-l="tr">Ne ayağa kalkıyor?</h3>
         <h3 data-l="en">What comes up</h3>
@@ -355,6 +359,10 @@
         <h2><span class="n">03</span><span data-l="tr">Bağımlılıkları kur</span><span data-l="en">Install the dependencies</span></h2>
         <p data-l="tr">Hepsi Ubuntu terminalinin içinde, sırayla.</p>
         <p data-l="en">All of this runs inside the Ubuntu terminal, in order.</p>
+        <div class="note">
+          <p data-l="tr"><strong>macOS kullanıcıları:</strong> bu bölümdeki Ubuntu komutları yerine <a href="docs/macos.md">macOS kurulum rehberini (İngilizce)</a> kullanmalı.</p>
+          <p data-l="en"><strong>macOS users:</strong> use the <a href="docs/macos.md">macOS setup guide</a> instead of the Ubuntu commands in this section.</p>
+        </div>
 
         <h3 data-l="tr">3.1 — Sistem paketleri</h3>
         <h3 data-l="en">3.1 — System packages</h3>
@@ -396,11 +404,12 @@ source ~/.bashrc &amp;&amp; foundryup -i v1.4.4 &amp;&amp; forge --version</code
 
       <section id="s4">
         <h2><span class="n">04</span><span data-l="tr">Depoyu klonla</span><span data-l="en">Clone the repo</span></h2>
-        <div class="code"><span class="tag">bash</span><pre><code>git clone https://github.com/circlefin/arc-node.git &amp;&amp; cd arc-node
+        <p data-l="tr">Submodule'leri başlatmadan ve bağımlılıkları kurmadan önce v0.8.0 "Zero8" sürümünü seç:</p>
+        <p data-l="en">Select v0.8.0 "Zero8" before initializing its submodules and installing dependencies:</p>
+        <div class="code"><span class="tag">bash</span><pre><code>git clone --branch v0.8.0 https://github.com/circlefin/arc-node.git &amp;&amp; cd arc-node
 git submodule update --init --recursive &amp;&amp; npm install</code></pre><button class="copy" type="button">copy</button></div>
-        <p data-l="tr">Submodule adımını atlama — kontratlar orada. Belirli bir sürümü çalıştırmak için (biz v0.8.0 "Zero8" kullanıyoruz):</p>
-        <p data-l="en">Don't skip the submodule step — the contracts live there. To run a specific release (we run v0.8.0 "Zero8"):</p>
-        <div class="code"><span class="tag">bash</span><pre><code>git checkout v0.8.0</code></pre><button class="copy" type="button">copy</button></div>
+        <p data-l="tr">Submodule adımını atlama — kontratlar orada.</p>
+        <p data-l="en">Don't skip the submodule step — the contracts live there.</p>
       </section>
 
       <section id="s5">
@@ -513,8 +522,8 @@ docker logs -f validator1_cl</code></pre><button class="copy" type="button">copy
           </div>
           <div class="fix">
             <div class="err">Pool overlaps with other one on this address space</div>
-            <p data-l="tr">Çok sayıda up/down döngüsünden sonra Docker'ın ağ veritabanı bozulmuş olabilir:</p>
-            <p data-l="en">After many up/down cycles, Docker's internal network database can get corrupted:</p>
+            <p data-l="tr"><strong>Yalnızca Linux/WSL Docker Engine için:</strong> Docker'ın ağ veritabanı bozulmuş olabilir. macOS'ta aşağıdaki servis komutları ve Linux dosya yolları yerine <a href="docs/macos.md#troubleshooting">macOS sorun giderme bölümünü (İngilizce)</a> kullan.</p>
+            <p data-l="en"><strong>Linux/WSL Docker Engine only:</strong> Docker's internal network state may be corrupted. On macOS, use the <a href="docs/macos.md#troubleshooting">macOS troubleshooting section</a> instead of the service commands and Linux paths below.</p>
             <div class="code"><span class="tag">bash</span><pre><code>sudo service docker stop
 sudo rm -rf /var/lib/docker/network/files/local-kv.db
 sudo service docker start</code></pre><button class="copy" type="button">copy</button></div>
